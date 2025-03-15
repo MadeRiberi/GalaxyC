@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Customer Management</title>
+    <script type="module">
+        // Import Firebase SDK (Ensure correct version)
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
+        import { getDatabase, ref, push, set, onValue } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js";
+
+        // Firebase Configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyB_huzwz26sigqmhNht_0MyIygpLUog6dI",
+            authDomain: "galaxy-customers.firebaseapp.com",
+            databaseURL: "https://galaxy-customers-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "galaxy-customers",
+            storageBucket: "galaxy-customers.firebasestorage.app",
+            messagingSenderId: "462214020659",
+            appId: "1:462214020659:web:800303442166573a4f2d46",
+            measurementId: "G-P70CXHMNHC"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        // Function to add customer
+        window.addCustomer = function () {
+            const name = document.getElementById('name').value;
+            const email = document.getElementById('email').value;
+            const startWhen = document.getElementById('startWhen').value;
+            const note = document.getElementById('note').value;
+
+            if (name && email && startWhen) {
+                const customerRef = push(ref(db, 'customers'));
+
+                set(customerRef, {
+                    name: name,
+                    email: email,
+                    startWhen: startWhen,
+                    note: note
+                }).then(() => {
+                    alert("Customer added successfully!");
+                    document.getElementById("customerForm").reset();
+                }).catch((error) => {
+                    alert("Error: " + error.message);
+                });
+            } else {
+                alert("Please fill in all required fields!");
+            }
+        };
+
+        // Function to load customers in real-time
+        window.loadCustomers = function () {
+            const customerRef = ref(db, 'customers');
+
+            onValue(customerRef, (snapshot) => {
+                const table = document.getElementById("customerTable");
+                table.innerHTML = "<tr><th>Name</th><th>Email</th><th>Start When</th><th>Note</th></tr>";
+
+                snapshot.forEach((childSnapshot) => {
+                    const data = childSnapshot.val();
+                    const row = table.insertRow();
+                    row.insertCell(0).textContent = data.name;
+                    row.insertCell(1).textContent = data.email;
+                    row.insertCell(2).textContent = data.startWhen;
+                    row.insertCell(3).textContent = data.note;
+                });
+            });
+        };
+
+        // Load customers on page load
+        window.onload = loadCustomers;
+    </script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            background-color: #f4f4f4;
+        }
+        .container {
+            width: 50%;
+            margin: auto;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+            margin-top: 20px;
+        }
+        input, button {
+            width: 90%;
+            padding: 10px;
+            margin: 5px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        button {
+            background: #28a745;
+            color: white;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #218838;
+        }
+        table {
+            width: 100%;
+            margin-top: 20px;
+            border-collapse: collapse;
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        th, td {
+            padding: 10px;
+            border-bottom: 1px solid #ddd;
+        }
+        th {
+            background: #007bff;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h2>Add Customer</h2>
+        <form id="customerForm">
+            <input type="text" id="name" placeholder="Name" required><br>
+            <input type="email" id="email" placeholder="Email" required><br>
+            <input type="date" id="startWhen" required><br>
+            <input type="text" id="note" placeholder="Note (Optional)"><br>
+            <button type="button" onclick="addCustomer()">Add Customer</button>
+        </form>
+    </div>
+
+    <div class="container">
+        <h2>Customer List</h2>
+        <table id="customerTable">
+            <tr>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Start When</th>
+                <th>Note</th>
+            </tr>
+        </table>
+    </div>
+
+</body>
+</html>
