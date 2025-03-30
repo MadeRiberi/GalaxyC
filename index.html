@@ -1,150 +1,415 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Customer Management</title>
-    <script type="module">
-        // Import Firebase SDK (Ensure correct version)
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
-        import { getDatabase, ref, push, set, onValue } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js";
-
-        // Firebase Configuration
-        const firebaseConfig = {
-            apiKey: "AIzaSyB_huzwz26sigqmhNht_0MyIygpLUog6dI",
-            authDomain: "galaxy-customers.firebaseapp.com",
-            databaseURL: "https://galaxy-customers-default-rtdb.asia-southeast1.firebasedatabase.app",
-            projectId: "galaxy-customers",
-            storageBucket: "galaxy-customers.firebasestorage.app",
-            messagingSenderId: "462214020659",
-            appId: "1:462214020659:web:800303442166573a4f2d46",
-            measurementId: "G-P70CXHMNHC"
-        };
-
-        // Initialize Firebase
-        const app = initializeApp(firebaseConfig);
-        const db = getDatabase(app);
-
-        // Function to add customer
-        window.addCustomer = function () {
-            const name = document.getElementById('name').value;
-            const email = document.getElementById('email').value;
-            const startWhen = document.getElementById('startWhen').value;
-            const note = document.getElementById('note').value;
-
-            if (name && email && startWhen) {
-                const customerRef = push(ref(db, 'customers'));
-
-                set(customerRef, {
-                    name: name,
-                    email: email,
-                    startWhen: startWhen,
-                    note: note
-                }).then(() => {
-                    alert("Customer added successfully!");
-                    document.getElementById("customerForm").reset();
-                }).catch((error) => {
-                    alert("Error: " + error.message);
-                });
-            } else {
-                alert("Please fill in all required fields!");
-            }
-        };
-
-        // Function to load customers in real-time
-        window.loadCustomers = function () {
-            const customerRef = ref(db, 'customers');
-
-            onValue(customerRef, (snapshot) => {
-                const table = document.getElementById("customerTable");
-                table.innerHTML = "<tr><th>Name</th><th>Email</th><th>Start When</th><th>Note</th></tr>";
-
-                snapshot.forEach((childSnapshot) => {
-                    const data = childSnapshot.val();
-                    const row = table.insertRow();
-                    row.insertCell(0).textContent = data.name;
-                    row.insertCell(1).textContent = data.email;
-                    row.insertCell(2).textContent = data.startWhen;
-                    row.insertCell(3).textContent = data.note;
-                });
-            });
-        };
-
-        // Load customers on page load
-        window.onload = loadCustomers;
-    </script>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            text-align: center;
-            background-color: #f4f4f4;
-        }
-        .container {
-            width: 50%;
-            margin: auto;
-            background: white;
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
-            margin-top: 20px;
-        }
-        input, button {
-            width: 90%;
-            padding: 10px;
-            margin: 5px;
-            border: 1px solid #ccc;
-            border-radius: 5px;
-        }
-        button {
-            background: #28a745;
-            color: white;
-            cursor: pointer;
-        }
-        button:hover {
-            background: #218838;
-        }
-        table {
-            width: 100%;
-            margin-top: 20px;
-            border-collapse: collapse;
-            background: white;
-            border-radius: 10px;
-            overflow: hidden;
-        }
-        th, td {
-            padding: 10px;
-            border-bottom: 1px solid #ddd;
-        }
-        th {
-            background: #007bff;
-            color: white;
-        }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Customer Management</title>
+  <script src="https://www.gstatic.com/firebasejs/10.5.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.5.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.5.0/firebase-database-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.5.0/firebase-storage-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.5.0/firebase-analytics-compat.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      background-color: #f4f4f4;
+      padding: 20px;
+    }
+    h2 {
+      margin-bottom: 10px;
+    }
+    form {
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+      max-width: 400px;
+      margin: auto;
+      position: relative;
+      z-index: 1;
+    }
+    input, select, button {
+      width: 100%;
+      margin: 5px 0;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      font-size: 16px;
+      background-color: #fff;
+    }
+    button {
+      background-color: #28a745;
+      color: white;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #218838;
+    }
+    .option-buttons {
+      margin: 20px 0;
+    }
+    .option-buttons button {
+      width: 150px;
+      margin: 0 10px;
+    }
+    .customer-list {
+      margin-top: 20px;
+      max-width: 700px;
+      margin: auto;
+      background: white;
+      padding: 10px;
+      border-radius: 10px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    th, td {
+      border: 1px solid #ddd;
+      padding: 10px;
+      text-align: left;
+    }
+    th {
+      background-color: #007bff;
+      color: white;
+    }
+    .delete-btn {
+      background-color: red;
+      color: white;
+      border: none;
+      padding: 5px 10px;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    .delete-btn:hover {
+      background-color: darkred;
+    }
+    .customer-image {
+      max-width: 100px;
+      margin-bottom: 20px;
+    }
+    /* Barcode Section Styling */
+    #scanBarcodeSection, .barcode-option-section {
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+      margin: auto;
+      max-width: 400px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+    .barcode-option-buttons {
+      margin-bottom: 20px;
+    }
+    .barcode-option-buttons button {
+      width: 150px;
+      margin: 0 10px;
+    }
+    .barcode-option-section {
+      display: none;
+    }
+    /* Camera video styling */
+    #video {
+      width: 100%;
+      max-width: 400px;
+      margin-top: 10px;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+    }
+  </style>
 </head>
 <body>
 
-    <div class="container">
-        <h2>Add Customer</h2>
-        <form id="customerForm">
-            <input type="text" id="name" placeholder="Name" required><br>
-            <input type="email" id="email" placeholder="Email" required><br>
-            <input type="date" id="startWhen" required><br>
-            <input type="text" id="note" placeholder="Note (Optional)"><br>
-            <button type="button" onclick="addCustomer()">Add Customer</button>
-        </form>
-    </div>
+  <!-- Login Section -->
+  <div id="loginSection">
+    <h2>Login</h2>
+    <form id="loginForm">
+      <input type="email" id="loginEmail" placeholder="Email" required>
+      <input type="password" id="loginPassword" placeholder="Password" required>
+      <button type="submit">Login</button>
+    </form>
+    <p id="loginError" style="color:red;"></p>
+  </div>
 
-    <div class="container">
-        <h2>Customer List</h2>
-        <table id="customerTable">
-            <tr>
-                <th>Name</th>
-                <th>Email</th>
-                <th>Start When</th>
-                <th>Note</th>
-            </tr>
-        </table>
+  <!-- Main Management Section (After Login) -->
+  <div id="customerManagementSection" style="display:none;">
+    <div class="option-buttons">
+      <button id="addCustomerBtn">Add Customers</button>
+      <button id="scanBarcodeBtn">Scan Barcode</button>
     </div>
+    
+    <!-- Add Customer Section -->
+    <div id="addCustomerSection">
+      <h2>Add Customer</h2>
+      <form id="customerForm">
+        <input type="text" id="name" placeholder="Name" required>
+        <input type="email" id="email" placeholder="Email" required>
+        
+        <label for="startDate">Start Date</label>
+        <input type="date" id="startDate" required onchange="calculateUntilDate()">
+        
+        <label for="duration">Duration</label>
+        <select id="duration" onchange="calculateUntilDate()">
+          <option value="1 Bulan">1 Bulan (1 Month)</option>
+          <option value="3 Bulan">3 Bulan (3 Months)</option>
+          <option value="1 Tahun">1 Tahun (1 Year)</option>
+        </select>
+        
+        <label for="untilDate">Until Date</label>
+        <input type="text" id="untilDate" placeholder="dd / mm / yyyy" readonly>
+        
+        <input type="text" id="note" placeholder="Note (Optional)">
+        
+        <label for="customerImage">Customer Image</label>
+        <input type="file" id="customerImage" accept="image/*" required>
+        
+        <button type="submit">Add Customer</button>
+      </form>
+
+      <h2>Customer List</h2>
+      <div class="customer-list">
+        <table>
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Email</th>
+              <th>Start Date</th>
+              <th>Duration</th>
+              <th>Until Date</th>
+              <th>Note</th>
+              <th>Image</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="customerTable"></tbody>
+        </table>
+      </div>
+    </div>
+    
+    <!-- Scan Barcode Section -->
+    <div id="scanBarcodeSection">
+      <h2>Scan Barcode</h2>
+      <div class="barcode-option-buttons">
+        <button id="enterBarcodeBtn">Enter Barcodes</button>
+        <button id="scanBarcodeOptionBtn">Scan Barcodes</button>
+      </div>
+      <!-- Enter Barcode Option -->
+      <div id="enterBarcodeSection" class="barcode-option-section">
+        <h3>Enter Barcode</h3>
+        <input type="text" id="barcodeInput" placeholder="Enter barcode manually">
+        <button id="processBarcodeBtn">Process Barcode</button>
+      </div>
+      <!-- Scan Barcode Option -->
+      <div id="actualScanBarcodeSection" class="barcode-option-section">
+        <h3>Scan Barcode</h3>
+        <button id="openCameraBtn">Open Camera</button>
+        <button id="closeCameraBtn" style="display:none;">Close Camera</button>
+        <br>
+        <video id="video" autoplay playsinline style="display:none;"></video>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Firebase Configuration with Analytics
+    const firebaseConfig = {
+      apiKey: "AIzaSyB_huzwz26sigqmhNht_0MyIygpLUog6dI",
+      authDomain: "galaxy-customers.firebaseapp.com",
+      databaseURL: "https://galaxy-customers-default-rtdb.asia-southeast1.firebasedatabase.app",
+      projectId: "galaxy-customers",
+      storageBucket: "galaxy-customers.appspot.com",
+      messagingSenderId: "462214020659",
+      appId: "1:462214020659:web:800303442166573a4f2d46",
+      measurementId: "G-P70CXHMNHC"
+    };
+
+    // Initialize Firebase
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+    const storage = firebase.storage();
+    const auth = firebase.auth();
+    const analytics = firebase.analytics();
+
+    const customersRef = db.ref("customers");
+
+    // Login Form Submission
+    document.getElementById("loginForm").addEventListener("submit", function(event) {
+      event.preventDefault();
+      const email = document.getElementById("loginEmail").value;
+      const password = document.getElementById("loginPassword").value;
+      auth.signInWithEmailAndPassword(email, password)
+        .then(() => {
+          document.getElementById("loginSection").style.display = "none";
+          document.getElementById("customerManagementSection").style.display = "block";
+          // Default to showing Add Customer section
+          showMainOption("addCustomerSection");
+          loadCustomers();
+        })
+        .catch((error) => {
+          document.getElementById("loginError").textContent = error.message;
+        });
+    });
+
+    // Main Option Buttons (Add Customer vs Scan Barcode)
+    document.getElementById("addCustomerBtn").addEventListener("click", function() {
+      showMainOption("addCustomerSection");
+    });
+    document.getElementById("scanBarcodeBtn").addEventListener("click", function() {
+      showMainOption("scanBarcodeSection");
+      // Default to showing Enter Barcode option
+      showBarcodeOption("enterBarcodeSection");
+    });
+
+    // Function to show main option section and hide others
+    function showMainOption(sectionId) {
+      document.getElementById("addCustomerSection").style.display = "none";
+      document.getElementById("scanBarcodeSection").style.display = "none";
+      document.getElementById(sectionId).style.display = "block";
+    }
+
+    // Barcode Option Buttons
+    document.getElementById("enterBarcodeBtn").addEventListener("click", function() {
+      showBarcodeOption("enterBarcodeSection");
+    });
+    document.getElementById("scanBarcodeOptionBtn").addEventListener("click", function() {
+      showBarcodeOption("actualScanBarcodeSection");
+    });
+
+    // Function to show one barcode option section
+    function showBarcodeOption(optionId) {
+      document.getElementById("enterBarcodeSection").style.display = "none";
+      document.getElementById("actualScanBarcodeSection").style.display = "none";
+      document.getElementById(optionId).style.display = "block";
+    }
+
+    // Process Barcode (Placeholder functionality)
+    document.getElementById("processBarcodeBtn").addEventListener("click", function() {
+      const barcode = document.getElementById("barcodeInput").value;
+      alert("Processing barcode: " + barcode);
+    });
+
+    // Camera streaming for scanning barcode
+    let videoStream = null;
+    const videoElement = document.getElementById("video");
+    document.getElementById("openCameraBtn").addEventListener("click", async function() {
+      try {
+        videoStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
+        videoElement.srcObject = videoStream;
+        videoElement.style.display = "block";
+        document.getElementById("openCameraBtn").style.display = "none";
+        document.getElementById("closeCameraBtn").style.display = "inline-block";
+      } catch (err) {
+        alert("Error accessing camera: " + err);
+      }
+    });
+    document.getElementById("closeCameraBtn").addEventListener("click", function() {
+      if (videoStream) {
+        videoStream.getTracks().forEach(track => track.stop());
+        videoStream = null;
+      }
+      videoElement.style.display = "none";
+      document.getElementById("openCameraBtn").style.display = "inline-block";
+      document.getElementById("closeCameraBtn").style.display = "none";
+    });
+
+    // Customer Form Submission (Add Customer)
+    document.getElementById("customerForm").addEventListener("submit", function(event) {
+      event.preventDefault();
+      let name = document.getElementById("name").value;
+      let email = document.getElementById("email").value;
+      let startDate = document.getElementById("startDate").value;
+      let duration = document.getElementById("duration").value;
+      let note = document.getElementById("note").value;
+      let untilDate = document.getElementById("untilDate").value;
+      let customerImage = document.getElementById("customerImage").files[0];
+      if (!customerImage) {
+        alert("Please select an image.");
+        return;
+      }
+      const storageRef = storage.ref(`customer_images/${customerImage.name}`);
+      const uploadTask = storageRef.put(customerImage);
+      uploadTask.on("state_changed", function(snapshot) {
+        // Optionally, handle progress here
+      }, function(error) {
+        alert("Error uploading image, please try again.");
+      }, function() {
+        uploadTask.snapshot.ref.getDownloadURL().then(function(imageUrl) {
+          let newCustomerRef = customersRef.push();
+          newCustomerRef.set({
+            id: newCustomerRef.key,
+            name: name,
+            email: email,
+            startDate: startDate,
+            duration: duration,
+            untilDate: untilDate,
+            note: note,
+            imageUrl: imageUrl
+          }).then(() => {
+            document.getElementById("customerForm").reset();
+            loadCustomers();
+          }).catch((error) => {
+            alert("Error adding customer, please try again.");
+          });
+        });
+      });
+    });
+
+    // Load Customers
+    function loadCustomers() {
+      customersRef.on("value", function(snapshot) {
+        let customerTable = document.getElementById("customerTable");
+        customerTable.innerHTML = "";
+        snapshot.forEach(function(childSnapshot) {
+          let customer = childSnapshot.val();
+          let customerId = childSnapshot.key;
+          let row = document.createElement("tr");
+          row.innerHTML = `
+            <td>${customer.name}</td>
+            <td>${customer.email}</td>
+            <td>${customer.startDate}</td>
+            <td>${customer.duration}</td>
+            <td>${customer.untilDate}</td>
+            <td>${customer.note}</td>
+            <td><img src="${customer.imageUrl}" alt="Image" class="customer-image"></td>
+            <td><button class="delete-btn" onclick="deleteCustomer('${customerId}')">Delete</button></td>
+          `;
+          customerTable.appendChild(row);
+        });
+      });
+    }
+
+    // Delete Customer
+    function deleteCustomer(customerId) {
+      customersRef.child(customerId).remove();
+    }
+
+    // Calculate Until Date Based on Duration and Format as dd / mm / yyyy
+    function calculateUntilDate() {
+      const startDate = document.getElementById("startDate").value;
+      const duration = document.getElementById("duration").value;
+      const untilDateField = document.getElementById("untilDate");
+      if (!startDate || !duration) return;
+      const start = new Date(startDate);
+      let untilDate = new Date(start);
+      switch (duration) {
+        case "1 Bulan":
+          untilDate.setMonth(start.getMonth() + 1);
+          break;
+        case "3 Bulan":
+          untilDate.setMonth(start.getMonth() + 3);
+          break;
+        case "1 Tahun":
+          untilDate.setFullYear(start.getFullYear() + 1);
+          break;
+      }
+      const day = String(untilDate.getDate()).padStart(2, '0');
+      const month = String(untilDate.getMonth() + 1).padStart(2, '0');
+      const year = untilDate.getFullYear();
+      untilDateField.value = `${day} / ${month} / ${year}`;
+    }
+  </script>
 
 </body>
 </html>
