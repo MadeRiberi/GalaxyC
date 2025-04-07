@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Galaxy Gym</title>
+  <link rel="icon" href="Galaxy LOGO.jpeg">
   <script src="https://www.gstatic.com/firebasejs/10.3.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.3.1/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.3.1/firebase-firestore-compat.js"></script>
@@ -33,6 +34,13 @@
       font-size: 2.5rem;
       color: #fff;
       text-shadow: 1px 1px 5px rgba(0,0,0,0.3);
+    }
+    /* Added image styling */
+    .header-image {
+      max-width: 100%;
+      height: auto;
+      border-radius: 10px;
+      margin-bottom: 20px;
     }
     /* Responsive Container */
     .container {
@@ -153,7 +161,6 @@
       cursor: pointer;
     }
     /* Uploadcare Widget Styling */
-    /* These selectors target the widget container and button created by Uploadcare */
     .uploadcare--widget {
       margin-top: 10px;
       font-family: inherit;
@@ -191,6 +198,9 @@
   <header>
     <h1>Galaxy Gym Management</h1>
   </header>
+
+  <!-- Added image right below the header -->
+  <img src="Galaxy LOGO.jpeg" alt="Gym Image" class="header-image" />
 
   <!-- Login Container -->
   <div id="login-container" class="container">
@@ -232,7 +242,6 @@
     <!-- First Picture -->
     <label>Upload Picture 1:</label>
     <input type="hidden" id="imageUrl" />
-    <!-- Note: data-button-text will set the button text in the widget -->
     <input type="hidden" role="uploadcare-uploader" id="uploadcare" data-public-key="aa1f3c5b6a3a577b0b93" data-button-text="Choose File" />
     <!-- Second Picture -->
     <label>Upload Picture 2:</label>
