@@ -4,8 +4,6 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Gym Login</title>
-  <!-- QuaggaJS for barcode scanning -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/quagga/0.12.1/quagga.min.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.3.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.3.1/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.3.1/firebase-firestore-compat.js"></script>
@@ -15,6 +13,8 @@
       font-family: Arial, sans-serif;
       background-color: #2ecc71;
       text-align: center;
+      margin: 0;
+      padding: 0;
     }
     .container {
       width: 300px;
@@ -27,45 +27,75 @@
       width: 100%;
       padding: 10px;
       margin: 10px 0;
+      box-sizing: border-box;
     }
     .customer-item {
-      border-bottom: 1px solid #ccc;
-      padding: 15px 10px;
+      position: relative;
+      padding: 40px 10px 15px 10px; /* space for buttons */
       text-align: left;
       margin-bottom: 10px;
-      position: relative;
       border-radius: 5px;
       background: #f9f9f9;
+      border: 1px solid #ccc;
     }
-    .barcode-image {
+    .customer-photo {
       max-width: 100%;
       margin-top: 10px;
+      border-radius: 5px;
+      cursor: pointer;
     }
     .delete-btn {
       position: absolute;
-      top: 10px;
-      right: 10px;
+      top: 8px;
+      right: 8px;
       background-color: #e74c3c;
       color: white;
       border: none;
-      border-radius: 5px;
-      padding: 6px 12px;
-      font-size: 14px;
+      border-radius: 3px;
+      padding: 4px 8px;
+      font-size: 12px;
       font-weight: bold;
       cursor: pointer;
+      z-index: 1;
     }
-    #scan-container {
+    .edit-btn {
+      position: absolute;
+      top: 36px;   /* positioned below delete button */
+      right: 8px;  /* aligned with delete button's right edge */
+      background: none;
+      border: none;
+      color: #3498db;
+      font-size: 12px;
+      cursor: pointer;
+      text-decoration: underline;
+      z-index: 2;
+    }
+    /* Modal Styles for Image Pop-up */
+    .modal {
       display: none;
-    }
-    #scanner {
+      position: fixed;
+      z-index: 1000;
+      left: 0;
+      top: 0;
       width: 100%;
-      height: 200px;
-      background: #000;
-      border-radius: 5px;
-      margin-bottom: 10px;
+      height: 100%;
+      overflow: auto;
+      background-color: rgba(0,0,0,0.8);
     }
-    #customer-info {
-      margin-top: 20px;
+    .modal-content {
+      margin: auto;
+      display: block;
+      max-width: 90%;
+      max-height: 90%;
+    }
+    .close {
+      position: absolute;
+      top: 15px;
+      right: 35px;
+      color: #f1f1f1;
+      font-size: 40px;
+      font-weight: bold;
+      cursor: pointer;
     }
   </style>
 </head>
@@ -82,25 +112,23 @@
   <div id="dashboard-cashier" class="container" style="display: none;">
     <button onclick="showCustomerForm()">ADD CUSTOMER</button>
     <button onclick="checkCustomers()">CHECK CUSTOMERS</button>
-    <button onclick="scanCustomer()">SCAN</button>
     <button onclick="logoutUser()">Logout</button>
   </div>
 
-  <!-- Owner Dashboard (all features) -->
+  <!-- Owner Dashboard -->
   <div id="dashboard-owner" class="container" style="display: none;">
     <button onclick="showCustomerForm()">ADD CUSTOMER</button>
     <button onclick="checkCustomers()">CHECK CUSTOMERS</button>
-    <button onclick="scanCustomer()">SCAN</button>
     <button onclick="manageCustomers()">MANAGE CUSTOMERS</button>
     <button onclick="logoutUser()">Logout</button>
   </div>
 
-  <!-- Add Customer Form -->
+  <!-- Add/Edit Customer Form -->
   <div id="customer-container" class="container" style="display: none;">
-    <h2>Add Customer</h2>
+    <h2 id="form-title">Add Customer</h2>
     <input type="text" id="nama" placeholder="Nama">
     <input type="email" id="customerEmail" placeholder="Email">
-    <input type="text" id="alamat" placeholder="Alamat">
+    <input type="text" id="alamat" placeholder="Address">
     <input type="date" id="mulaiKapan" onchange="updateEndDate()">
     <select id="durasi" onchange="updateEndDate()">
       <option value="1">1 Bulan</option>
@@ -109,26 +137,38 @@
     </select>
     <input type="date" id="berakhirKapan" placeholder="End Date" readonly>
     <textarea id="catatan" placeholder="Catatan"></textarea>
-    <input type="hidden" id="imageUrl">
-    <input type="hidden" role="uploadcare-uploader" id="uploadcare" data-public-key="aa1f3c5b6a3a577b0b93">
-    <button id="addCustomerBtn" type="button" onclick="addCustomer()">Add Customer</button>
+    <!-- First Picture -->
+    <label>Upload Picture 1:</label>
+    <input type="hidden" id="imageUrl" />
+    <input type="hidden" role="uploadcare-uploader" id="uploadcare" data-public-key="aa1f3c5b6a3a577b0b93" />
+    <!-- Second Picture -->
+    <label>Upload Picture 2:</label>
+    <input type="hidden" id="imageUrl2" />
+    <input type="hidden" role="uploadcare-uploader" id="uploadcare2" data-public-key="aa1f3c5b6a3a577b0b93" />
+    <button id="addCustomerBtn" type="button" onclick="saveCustomer()">Add Customer</button>
   </div>
 
   <!-- Customers List Container -->
   <div id="customers-list" class="container" style="display: none;">
     <h2>Customers List</h2>
+    <!-- Search Input -->
     <input type="text" id="searchInput" placeholder="Search by name">
     <button onclick="searchCustomers()">Search</button>
+    <!-- Filter Dropdown -->
+    <select id="filterSelect" onchange="filterCustomersList()">
+      <option value="total">Total Members</option>
+      <option value="active">Active Members</option>
+      <option value="expiring">Expiring Soon Members</option>
+      <option value="expired">Expired Members</option>
+    </select>
     <div id="list-content"></div>
     <button onclick="hideCustomersList()">Close</button>
   </div>
 
-  <!-- Scan Container -->
-  <div id="scan-container" class="container">
-    <h2>Scan Barcode</h2>
-    <div id="scanner"></div>
-    <button onclick="stopScanner()">Cancel Scan</button>
-    <div id="customer-info"></div>
+  <!-- Modal for displaying customer image -->
+  <div id="imageModal" class="modal" onclick="closeModal()">
+    <span class="close" onclick="closeModal()">&times;</span>
+    <img class="modal-content" id="modalImage">
   </div>
 
   <script>
@@ -148,8 +188,8 @@
 
     let customersData = [];
     let currentUserRole = "";
+    let editCustomerId = null;
 
-    // Auth state listener
     auth.onAuthStateChanged((user) => {
       if (user) {
         document.getElementById("login-container").style.display = "none";
@@ -186,215 +226,201 @@
     }
 
     function showCustomerForm() {
+      resetForm();
       document.getElementById("customer-container").style.display = "block";
       document.getElementById("customers-list").style.display = "none";
     }
 
+    function resetForm() {
+      editCustomerId = null;
+      document.getElementById("form-title").innerText = "Add Customer";
+      document.getElementById("addCustomerBtn").innerText = "Add Customer";
+      ["nama", "customerEmail", "alamat", "mulaiKapan", "berakhirKapan", "catatan", "imageUrl", "imageUrl2"].forEach(id => {
+        document.getElementById(id).value = "";
+      });
+      document.getElementById("durasi").value = "1";
+    }
+
     function updateEndDate() {
-      const startDateStr = document.getElementById("mulaiKapan").value;
-      const durationValue = parseInt(document.getElementById("durasi").value);
-      if (!startDateStr) {
-        document.getElementById("berakhirKapan").value = "";
-        return;
-      }
-      const startDate = new Date(startDateStr);
-      let endDate = new Date(startDate.getTime());
-      endDate.setMonth(endDate.getMonth() + durationValue);
-      const year = endDate.getFullYear();
-      const month = ("0" + (endDate.getMonth() + 1)).slice(-2);
-      const day = ("0" + endDate.getDate()).slice(-2);
-      document.getElementById("berakhirKapan").value = `${year}-${month}-${day}`;
+      const start = document.getElementById("mulaiKapan").value;
+      const dur = parseInt(document.getElementById("durasi").value);
+      if (!start) return document.getElementById("berakhirKapan").value = "";
+      const d = new Date(start);
+      d.setMonth(d.getMonth() + dur);
+      document.getElementById("berakhirKapan").value = d.toISOString().split("T")[0];
     }
 
     function checkCustomers() {
       document.getElementById("customer-container").style.display = "none";
       document.getElementById("customers-list").style.display = "block";
-      document.getElementById("list-content").innerHTML = "Loading customers...";
-      db.collection("customers").onSnapshot((querySnapshot) => {
+      document.getElementById("list-content").innerText = "Loading customers...";
+      db.collection("customers").onSnapshot(snapshot => {
         customersData = [];
-        querySnapshot.forEach((doc) => {
-          const customer = doc.data();
-          customer.id = doc.id;
-          customersData.push(customer);
+        snapshot.forEach(doc => {
+          const c = doc.data();
+          c.id = doc.id;
+          customersData.push(c);
         });
-        displayCustomers(customersData);
-      }, error => {
-        alert("Error fetching customers: " + error.message);
-        document.getElementById("list-content").innerHTML = "";
+        filterCustomersList();
+      }, e => {
+        alert("Error fetching customers: " + e.message);
+        document.getElementById("list-content").innerText = "";
       });
     }
 
-    function displayCustomers(customers) {
-      let listHTML = "";
-      if (customers.length === 0) {
-        listHTML = "<p>No customers found.</p>";
+    function displayCustomers(list) {
+      let html = "";
+      if (!list.length) {
+        html = "<p>No customers found.</p>";
       } else {
-        customers.forEach((customer) => {
-          const barcodeImageURL = `https://barcode.tec-it.com/barcode.ashx?data=${encodeURIComponent(customer.barcode)}&code=Code128`;
-          listHTML += `<div class="customer-item">
-            <strong>Name:</strong> ${customer.nama}<br>
-            <strong>Email:</strong> ${customer.customerEmail}<br>
-            <strong>Address:</strong> ${customer.alamat}<br>
-            <strong>Start Date:</strong> ${customer.mulaiKapan}<br>
-            <strong>Duration:</strong> ${customer.durasi} Bulan<br>
-            <strong>End Date:</strong> ${customer.berakhirKapan}<br>
-            <strong>Notes:</strong> ${customer.catatan}<br>
-            <strong>Barcode:</strong> ${customer.barcode}<br>
-            <img class="barcode-image" src="${barcodeImageURL}" alt="Barcode Image">`;
-          if (currentUserRole === "owner") {
-            listHTML += `<button class="delete-btn" onclick="deleteCustomer('${customer.id}')">Delete</button>`;
+        list.forEach(c => {
+          // Calculate status based on the end date
+          const now = new Date();
+          const endDate = new Date(c.berakhirKapan);
+          const diffDays = (endDate - now) / (1000 * 3600 * 24);
+          let statusColor = "";
+          let statusText = "";
+          if (diffDays < 0) {
+            statusColor = "red";
+            statusText = "EXPIRED";
+          } else if (diffDays <= 2) {
+            statusColor = "yellow";
+            statusText = "EXPIRING SOON";
+          } else {
+            statusColor = "green";
+            statusText = "ACTIVE";
           }
-          listHTML += `</div>`;
+          
+          html += `
+            <div class="customer-item">
+              <strong>Name:</strong> ${c.nama}<br>
+              <strong>Email:</strong> ${c.customerEmail}<br>
+              <strong>Address:</strong> ${c.alamat}<br>
+              <strong>Start Date:</strong> ${c.mulaiKapan}<br>
+              <strong>Duration:</strong> ${c.durasi} Bulan<br>
+              <strong>End Date:</strong> ${c.berakhirKapan}<br>
+              <strong>Status:</strong> <span style="color: ${statusColor}; font-weight: bold;">${statusText}</span><br>
+              <strong>Notes:</strong> ${c.catatan}<br>
+              <strong>Barcode:</strong> ${c.barcode}<br>
+              ${c.imageUrl ? `<img class="customer-photo" src="${c.imageUrl}" onclick="openModal('${c.imageUrl}')"><br>` : ""}
+              ${c.imageUrl2 ? `<img class="customer-photo" src="${c.imageUrl2}" onclick="openModal('${c.imageUrl2}')"><br>` : ""}
+              ${currentUserRole === "owner" ? `
+                <button class="delete-btn" onclick="deleteCustomer('${c.id}')">Delete</button>
+                <button class="edit-btn" onclick="editCustomer('${c.id}')">Edit</button>
+              ` : ""}
+            </div>
+          `;
         });
       }
-      document.getElementById("list-content").innerHTML = listHTML;
+      document.getElementById("list-content").innerHTML = html;
+    }
+
+    // Filter function based on dropdown selection
+    function filterCustomersList() {
+      const filter = document.getElementById("filterSelect").value;
+      let filteredData = customersData.filter(c => {
+        const now = new Date();
+        const endDate = new Date(c.berakhirKapan);
+        const diffDays = (endDate - now) / (1000 * 3600 * 24);
+        if (filter === "active") {
+          return diffDays > 2;
+        } else if (filter === "expiring") {
+          return diffDays <= 2 && diffDays >= 0;
+        } else if (filter === "expired") {
+          return diffDays < 0;
+        }
+        return true;
+      });
+      // Apply search filter if any text is entered
+      const searchTerm = document.getElementById("searchInput").value.toLowerCase();
+      if (searchTerm) {
+        filteredData = filteredData.filter(c => c.nama.toLowerCase().includes(searchTerm));
+      }
+      displayCustomers(filteredData);
     }
 
     function searchCustomers() {
-      const searchTerm = document.getElementById("searchInput").value.toLowerCase();
-      const filteredCustomers = customersData.filter(customer =>
-        customer.nama.toLowerCase().includes(searchTerm)
-      );
-      displayCustomers(filteredCustomers);
+      filterCustomersList();
     }
 
     function hideCustomersList() {
       document.getElementById("customers-list").style.display = "none";
     }
 
-    function addCustomer() {
-      const addBtn = document.getElementById("addCustomerBtn");
-      addBtn.disabled = true;
+    function saveCustomer() {
+      const btn = document.getElementById("addCustomerBtn");
+      btn.disabled = true;
       const nama = document.getElementById("nama").value.trim();
-      const customerEmail = document.getElementById("customerEmail").value.trim();
+      const email = document.getElementById("customerEmail").value.trim();
       const alamat = document.getElementById("alamat").value.trim();
-      const mulaiKapan = document.getElementById("mulaiKapan").value;
-      const berakhirKapan = document.getElementById("berakhirKapan").value;
-      if (!nama || !customerEmail || !alamat || !mulaiKapan || !berakhirKapan) {
+      const start = document.getElementById("mulaiKapan").value;
+      const end = document.getElementById("berakhirKapan").value;
+      if (!nama || !email || !alamat || !start || !end) {
         alert("Please fill in all required fields.");
-        addBtn.disabled = false;
+        btn.disabled = false;
         return;
       }
-      const durasi = document.getElementById("durasi").value;
-      const catatan = document.getElementById("catatan").value;
-      const imageUrl = document.getElementById("imageUrl").value;
-      const barcode = "CUST" + Date.now() + Math.floor(Math.random() * 1000);
-      db.collection("customers").add({
+      const data = {
         nama,
-        customerEmail,
+        customerEmail: email,
         alamat,
-        mulaiKapan,
-        durasi,
-        berakhirKapan,
-        catatan,
-        imageUrl,
-        barcode
-      })
-      .then(() => {
-        alert("Customer Added Successfully");
-        document.getElementById("nama").value = "";
-        document.getElementById("customerEmail").value = "";
-        document.getElementById("alamat").value = "";
-        document.getElementById("mulaiKapan").value = "";
-        document.getElementById("durasi").value = "1";
-        document.getElementById("berakhirKapan").value = "";
-        document.getElementById("catatan").value = "";
-        document.getElementById("imageUrl").value = "";
-      })
-      .catch(error => alert(error.message))
-      .finally(() => addBtn.disabled = false);
-    }
-
-    function deleteCustomer(customerId) {
-      if (confirm("Are you sure you want to delete this customer?")) {
-        db.collection("customers").doc(customerId).delete()
-          .then(() => alert("Customer deleted successfully."))
-          .catch(error => alert("Error deleting customer: " + error.message));
-      }
-    }
-
-    // Scanning Functions
-
-    function scanCustomer() {
-      // Hide other containers and show scan container
-      document.getElementById("customer-container").style.display = "none";
-      document.getElementById("customers-list").style.display = "none";
-      document.getElementById("scan-container").style.display = "block";
-      // Clear previous info
-      document.getElementById("customer-info").innerHTML = "";
-      startScanner();
-    }
-
-    function startScanner() {
-      // Remove fixed width/height to let mobile adjust
-      Quagga.init({
-        inputStream: {
-          name: "Live",
-          type: "LiveStream",
-          target: document.querySelector('#scanner'),
-          constraints: {
-            facingMode: "environment"
-          }
-        },
-        decoder: {
-          readers: ["code_128_reader"]
-        },
-        locate: true
-      }, function(err) {
-        if (err) {
-          console.error(err);
-          alert("Error initializing scanner: " + err);
-          return;
-        }
-        console.log("Scanner initialized.");
-        Quagga.start();
-      });
-      Quagga.onDetected(onBarcodeDetected);
-    }
-
-    function onBarcodeDetected(result) {
-      const code = result.codeResult.code;
-      console.log("Barcode detected:", code);
-      // Stop scanner
-      Quagga.offDetected(onBarcodeDetected);
-      Quagga.stop();
-      // Query Firestore for the customer with the scanned barcode
-      db.collection("customers").where("barcode", "==", code).get()
-      .then(querySnapshot => {
-        const customerInfo = document.getElementById("customer-info");
-        if (querySnapshot.empty) {
-          customerInfo.innerHTML = "<p>No customer found with barcode: " + code + "</p>";
-        } else {
-          querySnapshot.forEach(doc => {
-            const customer = doc.data();
-            customerInfo.innerHTML = `
-              <h3>Customer Found:</h3>
-              <p><strong>Name:</strong> ${customer.nama}</p>
-              <p><strong>Email:</strong> ${customer.customerEmail}</p>
-              <p><strong>Address:</strong> ${customer.alamat}</p>
-              <p><strong>Start Date:</strong> ${customer.mulaiKapan}</p>
-              <p><strong>Duration:</strong> ${customer.durasi} Months</p>
-              <p><strong>End Date:</strong> ${customer.berakhirKapan}</p>
-              <p><strong>Notes:</strong> ${customer.catatan}</p>
-            `;
-          });
+        mulaiKapan: start,
+        durasi: document.getElementById("durasi").value,
+        berakhirKapan: end,
+        catatan: document.getElementById("catatan").value,
+        imageUrl: document.getElementById("imageUrl").value,
+        imageUrl2: document.getElementById("imageUrl2").value
+      };
+      const action = editCustomerId
+        ? db.collection("customers").doc(editCustomerId).update(data)
+        : db.collection("customers").add(Object.assign(data, { barcode: "CUST" + Date.now() + Math.floor(Math.random() * 1000) }));
+      action.then(() => {
+        alert(editCustomerId ? "Customer Updated Successfully" : "Customer Added Successfully");
+        resetForm();
+        if (editCustomerId) {
+          document.getElementById("customer-container").style.display = "none";
         }
       })
-      .catch(error => alert("Error retrieving customer: " + error.message));
+      .catch(e => alert(e.message))
+      .finally(() => btn.disabled = false);
     }
 
-    function stopScanner() {
-      Quagga.offDetected(onBarcodeDetected);
-      Quagga.stop();
-      document.getElementById("scan-container").style.display = "none";
+    function editCustomer(id) {
+      const c = customersData.find(x => x.id === id);
+      if (!c) return alert("Customer not found.");
+      ["nama", "customerEmail", "alamat", "mulaiKapan", "durasi", "berakhirKapan", "catatan"].forEach(field =>
+        document.getElementById(field).value = c[field]
+      );
+      document.getElementById("imageUrl").value = c.imageUrl || "";
+      document.getElementById("imageUrl2").value = c.imageUrl2 || "";
+      editCustomerId = id;
+      document.getElementById("form-title").innerText = "Edit Customer";
+      document.getElementById("addCustomerBtn").innerText = "Update Customer";
+      document.getElementById("customer-container").style.display = "block";
     }
 
-    function manageCustomers() {
-      alert("Manage Customers feature coming soon.");
+    function deleteCustomer(id) {
+      if (!confirm("Are you sure you want to delete this customer?")) return;
+      db.collection("customers").doc(id).delete()
+        .then(() => alert("Customer deleted successfully."))
+        .catch(e => alert("Error deleting customer: " + e.message));
     }
 
-    uploadcare.Widget("#uploadcare").onUploadComplete(function(fileInfo) {
-      document.getElementById("imageUrl").value = fileInfo.cdnUrl;
+    function openModal(url) {
+      document.getElementById("modalImage").src = url;
+      document.getElementById("imageModal").style.display = "block";
+    }
+
+    function closeModal() {
+      document.getElementById("imageModal").style.display = "none";
+    }
+
+    // Uploadcare widgets for both pictures
+    uploadcare.Widget("#uploadcare").onUploadComplete(info => {
+      document.getElementById("imageUrl").value = info.cdnUrl;
+    });
+    uploadcare.Widget("#uploadcare2").onUploadComplete(info => {
+      document.getElementById("imageUrl2").value = info.cdnUrl;
     });
   </script>
 </body>
