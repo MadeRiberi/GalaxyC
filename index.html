@@ -231,6 +231,8 @@
     <input type="text" id="nama" placeholder="Name" />
     <input type="email" id="customerEmail" placeholder="Email" />
     <input type="text" id="alamat" placeholder="Address" />
+    <!-- New Phone Number field -->
+    <input type="tel" id="phone" placeholder="Phone Number" />
     <input type="date" id="mulaiKapan" onchange="updateEndDate()" />
     <select id="durasi" onchange="updateEndDate()">
       <option value="1">1 Month</option>
@@ -335,7 +337,8 @@
       editCustomerId = null;
       document.getElementById("form-title").innerText = "Add Customer";
       document.getElementById("addCustomerBtn").innerText = "Add Customer";
-      ["nama", "customerEmail", "alamat", "mulaiKapan", "berakhirKapan", "catatan", "imageUrl", "imageUrl2"].forEach(id => {
+      // Clear all input fields including the new phone field
+      ["nama", "customerEmail", "alamat", "phone", "mulaiKapan", "berakhirKapan", "catatan", "imageUrl", "imageUrl2"].forEach(id => {
         document.getElementById(id).value = "";
       });
       document.getElementById("durasi").value = "1";
@@ -396,6 +399,7 @@
               <strong>Name:</strong> ${c.nama}<br>
               <strong>Email:</strong> ${c.customerEmail}<br>
               <strong>Address:</strong> ${c.alamat}<br>
+              <strong>Phone:</strong> ${c.phone || "N/A"}<br>
               <strong>Start Date:</strong> ${c.mulaiKapan}<br>
               <strong>Duration:</strong> ${c.durasi} Month(s)<br>
               <strong>End Date:</strong> ${c.berakhirKapan}<br>
@@ -455,9 +459,11 @@
       const nama = document.getElementById("nama").value.trim();
       const email = document.getElementById("customerEmail").value.trim();
       const alamat = document.getElementById("alamat").value.trim();
+      const phone = document.getElementById("phone").value.trim();
       const start = document.getElementById("mulaiKapan").value;
       const end = document.getElementById("berakhirKapan").value;
-      if (!nama || !email || !alamat || !start || !end) {
+      // Check for required fields including phone number
+      if (!nama || !email || !alamat || !phone || !start || !end) {
         alert("Please fill in all required fields.");
         btn.disabled = false;
         return;
@@ -466,6 +472,7 @@
         nama,
         customerEmail: email,
         alamat,
+        phone,
         mulaiKapan: start,
         durasi: document.getElementById("durasi").value,
         berakhirKapan: end,
@@ -490,8 +497,8 @@
     function editCustomer(id) {
       const c = customersData.find(x => x.id === id);
       if (!c) return alert("Customer not found.");
-      ["nama", "customerEmail", "alamat", "mulaiKapan", "durasi", "berakhirKapan", "catatan"].forEach(field =>
-        document.getElementById(field).value = c[field]
+      ["nama", "customerEmail", "alamat", "phone", "mulaiKapan", "durasi", "berakhirKapan", "catatan"].forEach(field =>
+        document.getElementById(field).value = c[field] || ""
       );
       document.getElementById("imageUrl").value = c.imageUrl || "";
       document.getElementById("imageUrl2").value = c.imageUrl2 || "";
