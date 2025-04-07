@@ -326,20 +326,20 @@
     }
 
     function startScanner() {
+      // Remove fixed width/height to let mobile adjust
       Quagga.init({
         inputStream: {
           name: "Live",
           type: "LiveStream",
           target: document.querySelector('#scanner'),
           constraints: {
-            width: 300,
-            height: 200,
             facingMode: "environment"
           }
         },
         decoder: {
           readers: ["code_128_reader"]
-        }
+        },
+        locate: true
       }, function(err) {
         if (err) {
           console.error(err);
@@ -355,11 +355,10 @@
     function onBarcodeDetected(result) {
       const code = result.codeResult.code;
       console.log("Barcode detected:", code);
-      // Stop the scanner
+      // Stop scanner
       Quagga.offDetected(onBarcodeDetected);
       Quagga.stop();
-      // Instead of hiding scan container immediately,
-      // display the scanned result in the #customer-info div.
+      // Query Firestore for the customer with the scanned barcode
       db.collection("customers").where("barcode", "==", code).get()
       .then(querySnapshot => {
         const customerInfo = document.getElementById("customer-info");
