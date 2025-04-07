@@ -29,9 +29,14 @@
       margin: 10px 0;
       box-sizing: border-box;
     }
+    /* Make the End Date field look non-editable */
+    #berakhirKapan {
+      background-color: #eee;
+      cursor: not-allowed;
+    }
     .customer-item {
       position: relative;
-      padding: 40px 10px 15px 10px; /* space for buttons */
+      padding: 40px 10px 15px 10px;
       text-align: left;
       margin-bottom: 10px;
       border-radius: 5px;
@@ -60,8 +65,8 @@
     }
     .edit-btn {
       position: absolute;
-      top: 36px;   /* positioned below delete button */
-      right: 8px;  /* aligned with delete button's right edge */
+      top: 36px;
+      right: 8px;
       background: none;
       border: none;
       color: #3498db;
