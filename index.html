@@ -190,6 +190,22 @@
       document.getElementById("customers-list").style.display = "none";
     }
 
+    function updateEndDate() {
+      const startDateStr = document.getElementById("mulaiKapan").value;
+      const durationValue = parseInt(document.getElementById("durasi").value);
+      if (!startDateStr) {
+        document.getElementById("berakhirKapan").value = "";
+        return;
+      }
+      const startDate = new Date(startDateStr);
+      let endDate = new Date(startDate.getTime());
+      endDate.setMonth(endDate.getMonth() + durationValue);
+      const year = endDate.getFullYear();
+      const month = ("0" + (endDate.getMonth() + 1)).slice(-2);
+      const day = ("0" + endDate.getDate()).slice(-2);
+      document.getElementById("berakhirKapan").value = `${year}-${month}-${day}`;
+    }
+
     function checkCustomers() {
       document.getElementById("customer-container").style.display = "none";
       document.getElementById("customers-list").style.display = "block";
@@ -304,6 +320,8 @@
       document.getElementById("customer-container").style.display = "none";
       document.getElementById("customers-list").style.display = "none";
       document.getElementById("scan-container").style.display = "block";
+      // Clear previous info
+      document.getElementById("customer-info").innerHTML = "";
       startScanner();
     }
 
@@ -324,22 +342,24 @@
         }
       }, function(err) {
         if (err) {
-          console.log(err);
+          console.error(err);
           alert("Error initializing scanner: " + err);
           return;
         }
+        console.log("Scanner initialized.");
         Quagga.start();
       });
-
       Quagga.onDetected(onBarcodeDetected);
     }
 
     function onBarcodeDetected(result) {
       const code = result.codeResult.code;
+      console.log("Barcode detected:", code);
+      // Stop the scanner
       Quagga.offDetected(onBarcodeDetected);
       Quagga.stop();
-      document.getElementById("scan-container").style.display = "none";
-      // Query Firestore for customer with the scanned barcode
+      // Instead of hiding scan container immediately,
+      // display the scanned result in the #customer-info div.
       db.collection("customers").where("barcode", "==", code).get()
       .then(querySnapshot => {
         const customerInfo = document.getElementById("customer-info");
