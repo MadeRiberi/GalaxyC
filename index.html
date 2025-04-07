@@ -35,6 +35,19 @@
       color: #fff;
       text-shadow: 1px 1px 5px rgba(0,0,0,0.3);
     }
+    /* Notification Styling */
+    #notification {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background-color: #27ae60;
+      color: #fff;
+      padding: 15px 20px;
+      border-radius: 5px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+      display: none;
+      z-index: 2000;
+    }
     /* Added image styling */
     .header-image {
       max-width: 100%;
@@ -199,6 +212,9 @@
     <h1>Galaxy Gym Management</h1>
   </header>
 
+  <!-- Notification Element -->
+  <div id="notification"></div>
+
   <!-- Added image right below the header -->
   <img src="Galaxy LOGO.jpeg" alt="Gym Image" class="header-image" />
 
@@ -292,6 +308,17 @@
     let currentUserRole = "";
     let editCustomerId = null;
 
+    // Custom notification function
+    function showNotification(message, type = "success") {
+      const notification = document.getElementById("notification");
+      notification.innerText = message;
+      notification.style.backgroundColor = type === "success" ? "#27ae60" : "#e74c3c";
+      notification.style.display = "block";
+      setTimeout(() => {
+        notification.style.display = "none";
+      }, 3000);
+    }
+
     auth.onAuthStateChanged((user) => {
       if (user) {
         document.getElementById("login-container").style.display = "none";
@@ -304,7 +331,7 @@
           document.getElementById("dashboard-owner").style.display = "block";
           document.getElementById("dashboard-cashier").style.display = "none";
         } else {
-          alert("User not recognized for a specific role.");
+          showNotification("User not recognized for a specific role.", "error");
           logoutUser();
         }
       } else {
@@ -320,7 +347,10 @@
       const email = document.getElementById("email").value;
       const password = document.getElementById("password").value;
       auth.signInWithEmailAndPassword(email, password)
-        .catch(error => alert(error.message));
+        .then(() => {
+          showNotification("Login Successful", "success");
+        })
+        .catch(error => showNotification(error.message, "error"));
     }
 
     function logoutUser() {
@@ -366,7 +396,7 @@
         });
         filterCustomersList();
       }, e => {
-        alert("Error fetching customers: " + e.message);
+        showNotification("Error fetching customers: " + e.message, "error");
         document.getElementById("list-content").innerText = "";
       });
     }
@@ -464,7 +494,7 @@
       const end = document.getElementById("berakhirKapan").value;
       // Check for required fields including phone number
       if (!nama || !email || !alamat || !phone || !start || !end) {
-        alert("Please fill in all required fields.");
+        showNotification("Please fill in all required fields.", "error");
         btn.disabled = false;
         return;
       }
@@ -484,19 +514,19 @@
         ? db.collection("customers").doc(editCustomerId).update(data)
         : db.collection("customers").add(Object.assign(data, { barcode: "CUST" + Date.now() + Math.floor(Math.random() * 1000) }));
       action.then(() => {
-        alert(editCustomerId ? "Customer Updated Successfully" : "Customer Added Successfully");
+        showNotification(editCustomerId ? "Customer Updated Successfully" : "Customer Added Successfully", "success");
         resetForm();
         if (editCustomerId) {
           document.getElementById("customer-container").style.display = "none";
         }
       })
-      .catch(e => alert(e.message))
+      .catch(e => showNotification(e.message, "error"))
       .finally(() => btn.disabled = false);
     }
 
     function editCustomer(id) {
       const c = customersData.find(x => x.id === id);
-      if (!c) return alert("Customer not found.");
+      if (!c) return showNotification("Customer not found.", "error");
       ["nama", "customerEmail", "alamat", "phone", "mulaiKapan", "durasi", "berakhirKapan", "catatan"].forEach(field =>
         document.getElementById(field).value = c[field] || ""
       );
@@ -511,8 +541,8 @@
     function deleteCustomer(id) {
       if (!confirm("Are you sure you want to delete this customer?")) return;
       db.collection("customers").doc(id).delete()
-        .then(() => alert("Customer deleted successfully."))
-        .catch(e => alert("Error deleting customer: " + e.message));
+        .then(() => showNotification("Customer deleted successfully.", "success"))
+        .catch(e => showNotification("Error deleting customer: " + e.message, "error"));
     }
 
     function openModal(url) {
