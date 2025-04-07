@@ -3,77 +3,125 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Gym Login</title>
+  <title>Galaxy Gym</title>
   <script src="https://www.gstatic.com/firebasejs/10.3.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.3.1/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.3.1/firebase-firestore-compat.js"></script>
   <script src="https://ucarecdn.com/libs/widget/3.x/uploadcare.full.min.js"></script>
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      background-color: #2ecc71;
-      text-align: center;
+    /* Global Styles */
+    * {
+      box-sizing: border-box;
       margin: 0;
       padding: 0;
     }
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #2ecc71, #27ae60);
+      color: #333;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+      padding: 20px;
+    }
+    header {
+      margin-bottom: 20px;
+      text-align: center;
+    }
+    header h1 {
+      font-size: 2.5rem;
+      color: #fff;
+      text-shadow: 1px 1px 5px rgba(0,0,0,0.3);
+    }
+    /* Responsive Container */
     .container {
-      width: 300px;
+      width: 90%;
+      max-width: 600px;
       margin: 20px auto;
       padding: 20px;
-      background: white;
+      background: #fff;
       border-radius: 10px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+      transition: transform 0.3s ease;
     }
+    .container:hover {
+      transform: translateY(-3px);
+    }
+    /* Inputs, Buttons, etc. */
     input, select, button, textarea {
       width: 100%;
-      padding: 10px;
+      padding: 12px;
       margin: 10px 0;
-      box-sizing: border-box;
+      font-size: 1rem;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      transition: border-color 0.3s;
     }
-    /* Make the End Date field look non-editable */
+    input:focus, select:focus, textarea:focus {
+      border-color: #27ae60;
+      outline: none;
+    }
+    button {
+      background-color: #27ae60;
+      color: #fff;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      padding: 12px;
+      font-weight: bold;
+      transition: background-color 0.3s ease, transform 0.2s ease;
+    }
+    button:hover {
+      background-color: #219150;
+      transform: scale(1.02);
+    }
+    /* End Date Field */
     #berakhirKapan {
       background-color: #eee;
       cursor: not-allowed;
     }
+    /* Customer Cards */
     .customer-item {
-      position: relative;
-      padding: 40px 10px 15px 10px;
-      text-align: left;
-      margin-bottom: 10px;
-      border-radius: 5px;
-      background: #f9f9f9;
-      border: 1px solid #ccc;
+      padding: 20px 15px;
+      margin-bottom: 15px;
+      border-radius: 10px;
+      background: #fafafa;
+      border-left: 5px solid #27ae60;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      transition: box-shadow 0.3s ease;
+    }
+    .customer-item:hover {
+      box-shadow: 0 4px 10px rgba(0,0,0,0.15);
     }
     .customer-photo {
       max-width: 100%;
-      margin-top: 10px;
       border-radius: 5px;
+      margin-top: 10px;
       cursor: pointer;
+      transition: transform 0.3s ease;
     }
-    .delete-btn {
-      position: absolute;
-      top: 8px;
-      right: 8px;
-      background-color: #e74c3c;
-      color: white;
-      border: none;
-      border-radius: 3px;
-      padding: 4px 8px;
-      font-size: 12px;
-      font-weight: bold;
-      cursor: pointer;
-      z-index: 1;
+    .customer-photo:hover {
+      transform: scale(1.03);
+    }
+    /* Card Buttons Container */
+    .card-buttons {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      margin-top: 10px;
+    }
+    .card-buttons button {
+      padding: 8px 12px;
+      font-size: 0.9rem;
     }
     .edit-btn {
-      position: absolute;
-      top: 36px;
-      right: 8px;
-      background: none;
-      border: none;
-      color: #3498db;
-      font-size: 12px;
-      cursor: pointer;
-      text-decoration: underline;
-      z-index: 2;
+      background-color: #3498db;
+      color: #fff;
+    }
+    .delete-btn {
+      background-color: #e74c3c;
+      color: #fff;
     }
     /* Modal Styles for Image Pop-up */
     .modal {
@@ -84,86 +132,124 @@
       top: 0;
       width: 100%;
       height: 100%;
-      overflow: auto;
       background-color: rgba(0,0,0,0.8);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
     }
     .modal-content {
-      margin: auto;
-      display: block;
       max-width: 90%;
       max-height: 90%;
+      border-radius: 5px;
     }
     .close {
       position: absolute;
       top: 15px;
       right: 35px;
-      color: #f1f1f1;
+      color: #fff;
       font-size: 40px;
       font-weight: bold;
       cursor: pointer;
     }
+    /* Uploadcare Widget Styling */
+    /* These selectors target the widget container and button created by Uploadcare */
+    .uploadcare--widget {
+      margin-top: 10px;
+      font-family: inherit;
+      font-size: 1rem;
+      width: 100%;
+    }
+    .uploadcare--widget .uploadcare--button {
+      background-color: #27ae60;
+      color: #fff;
+      border: none;
+      border-radius: 5px;
+      padding: 10px;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+    .uploadcare--widget .uploadcare--button:hover {
+      background-color: #219150;
+    }
+    /* Responsive adjustments */
+    @media (max-width: 480px) {
+      input, select, button, textarea {
+        padding: 10px;
+        font-size: 0.9rem;
+      }
+      .container {
+        padding: 15px;
+      }
+      header h1 {
+        font-size: 2rem;
+      }
+    }
   </style>
 </head>
 <body>
+  <header>
+    <h1>Galaxy Gym Management</h1>
+  </header>
+
   <!-- Login Container -->
   <div id="login-container" class="container">
     <h2>Login</h2>
-    <input type="email" id="email" placeholder="Email">
-    <input type="password" id="password" placeholder="Password">
+    <input type="email" id="email" placeholder="Email" />
+    <input type="password" id="password" placeholder="Password" />
     <button onclick="loginUser()">Login</button>
   </div>
 
   <!-- Cashier Dashboard -->
   <div id="dashboard-cashier" class="container" style="display: none;">
-    <button onclick="showCustomerForm()">ADD CUSTOMER</button>
-    <button onclick="checkCustomers()">CHECK CUSTOMERS</button>
+    <button onclick="showCustomerForm()">Add Customer</button>
+    <button onclick="checkCustomers()">Check Customers</button>
     <button onclick="logoutUser()">Logout</button>
   </div>
 
   <!-- Owner Dashboard -->
   <div id="dashboard-owner" class="container" style="display: none;">
-    <button onclick="showCustomerForm()">ADD CUSTOMER</button>
-    <button onclick="checkCustomers()">CHECK CUSTOMERS</button>
-    <button onclick="manageCustomers()">MANAGE CUSTOMERS</button>
+    <button onclick="showCustomerForm()">Add Customer</button>
+    <button onclick="checkCustomers()">Check Customers</button>
+    <button onclick="manageCustomers()">Manage Customers</button>
     <button onclick="logoutUser()">Logout</button>
   </div>
 
   <!-- Add/Edit Customer Form -->
   <div id="customer-container" class="container" style="display: none;">
     <h2 id="form-title">Add Customer</h2>
-    <input type="text" id="nama" placeholder="Nama">
-    <input type="email" id="customerEmail" placeholder="Email">
-    <input type="text" id="alamat" placeholder="Address">
-    <input type="date" id="mulaiKapan" onchange="updateEndDate()">
+    <input type="text" id="nama" placeholder="Name" />
+    <input type="email" id="customerEmail" placeholder="Email" />
+    <input type="text" id="alamat" placeholder="Address" />
+    <input type="date" id="mulaiKapan" onchange="updateEndDate()" />
     <select id="durasi" onchange="updateEndDate()">
-      <option value="1">1 Bulan</option>
-      <option value="3">3 Bulan</option>
-      <option value="12">1 Tahun</option>
+      <option value="1">1 Month</option>
+      <option value="3">3 Months</option>
+      <option value="12">1 Year</option>
     </select>
-    <input type="date" id="berakhirKapan" placeholder="End Date" readonly>
-    <textarea id="catatan" placeholder="Catatan"></textarea>
+    <input type="date" id="berakhirKapan" placeholder="End Date" readonly />
+    <textarea id="catatan" placeholder="Notes"></textarea>
     <!-- First Picture -->
     <label>Upload Picture 1:</label>
     <input type="hidden" id="imageUrl" />
-    <input type="hidden" role="uploadcare-uploader" id="uploadcare" data-public-key="aa1f3c5b6a3a577b0b93" />
+    <!-- Note: data-button-text will set the button text in the widget -->
+    <input type="hidden" role="uploadcare-uploader" id="uploadcare" data-public-key="aa1f3c5b6a3a577b0b93" data-button-text="Choose File" />
     <!-- Second Picture -->
     <label>Upload Picture 2:</label>
     <input type="hidden" id="imageUrl2" />
-    <input type="hidden" role="uploadcare-uploader" id="uploadcare2" data-public-key="aa1f3c5b6a3a577b0b93" />
+    <input type="hidden" role="uploadcare-uploader" id="uploadcare2" data-public-key="aa1f3c5b6a3a577b0b93" data-button-text="Choose File" />
     <button id="addCustomerBtn" type="button" onclick="saveCustomer()">Add Customer</button>
   </div>
 
   <!-- Customers List Container -->
   <div id="customers-list" class="container" style="display: none;">
     <h2>Customers List</h2>
-    <!-- Search Input -->
-    <input type="text" id="searchInput" placeholder="Search by name">
+    <input type="text" id="searchInput" placeholder="Search by name" />
     <button onclick="searchCustomers()">Search</button>
-    <!-- Filter Dropdown -->
     <select id="filterSelect" onchange="filterCustomersList()">
       <option value="total">Total Members</option>
       <option value="active">Active Members</option>
-      <option value="expiring">Expiring Soon Members</option>
+      <option value="expiring">Expiring Soon</option>
       <option value="expired">Expired Members</option>
     </select>
     <div id="list-content"></div>
@@ -173,7 +259,7 @@
   <!-- Modal for displaying customer image -->
   <div id="imageModal" class="modal" onclick="closeModal()">
     <span class="close" onclick="closeModal()">&times;</span>
-    <img class="modal-content" id="modalImage">
+    <img class="modal-content" id="modalImage" alt="Customer Image" />
   </div>
 
   <script>
@@ -302,17 +388,19 @@
               <strong>Email:</strong> ${c.customerEmail}<br>
               <strong>Address:</strong> ${c.alamat}<br>
               <strong>Start Date:</strong> ${c.mulaiKapan}<br>
-              <strong>Duration:</strong> ${c.durasi} Bulan<br>
+              <strong>Duration:</strong> ${c.durasi} Month(s)<br>
               <strong>End Date:</strong> ${c.berakhirKapan}<br>
               <strong>Status:</strong> <span style="color: ${statusColor}; font-weight: bold;">${statusText}</span><br>
               <strong>Notes:</strong> ${c.catatan}<br>
               <strong>Barcode:</strong> ${c.barcode}<br>
-              ${c.imageUrl ? `<img class="customer-photo" src="${c.imageUrl}" onclick="openModal('${c.imageUrl}')"><br>` : ""}
-              ${c.imageUrl2 ? `<img class="customer-photo" src="${c.imageUrl2}" onclick="openModal('${c.imageUrl2}')"><br>` : ""}
-              ${currentUserRole === "owner" ? `
-                <button class="delete-btn" onclick="deleteCustomer('${c.id}')">Delete</button>
-                <button class="edit-btn" onclick="editCustomer('${c.id}')">Edit</button>
-              ` : ""}
+              ${(c.imageUrl && c.imageUrl.trim() !== "") ? `<img class="customer-photo" src="${c.imageUrl}" onclick="openModal('${c.imageUrl}')"><br>` : "" }
+              ${(c.imageUrl2 && c.imageUrl2.trim() !== "") ? `<img class="customer-photo" src="${c.imageUrl2}" onclick="openModal('${c.imageUrl2}')"><br>` : "" }
+              ${ currentUserRole === "owner" ? `
+                <div class="card-buttons">
+                  <button class="edit-btn" onclick="editCustomer('${c.id}')">Edit</button>
+                  <button class="delete-btn" onclick="deleteCustomer('${c.id}')">Delete</button>
+                </div>
+              ` : "" }
             </div>
           `;
         });
@@ -413,7 +501,7 @@
 
     function openModal(url) {
       document.getElementById("modalImage").src = url;
-      document.getElementById("imageModal").style.display = "block";
+      document.getElementById("imageModal").style.display = "flex";
     }
 
     function closeModal() {
