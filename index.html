@@ -54,7 +54,6 @@
       font-weight: bold;
       cursor: pointer;
     }
-    /* Style for the scanning container */
     #scan-container {
       display: none;
     }
@@ -64,6 +63,9 @@
       background: #000;
       border-radius: 5px;
       margin-bottom: 10px;
+    }
+    #customer-info {
+      margin-top: 20px;
     }
   </style>
 </head>
@@ -126,6 +128,7 @@
     <h2>Scan Barcode</h2>
     <div id="scanner"></div>
     <button onclick="stopScanner()">Cancel Scan</button>
+    <div id="customer-info"></div>
   </div>
 
   <script>
@@ -185,22 +188,6 @@
     function showCustomerForm() {
       document.getElementById("customer-container").style.display = "block";
       document.getElementById("customers-list").style.display = "none";
-    }
-
-    function updateEndDate() {
-      const startDateStr = document.getElementById("mulaiKapan").value;
-      const durationValue = parseInt(document.getElementById("durasi").value);
-      if (!startDateStr) {
-        document.getElementById("berakhirKapan").value = "";
-        return;
-      }
-      const startDate = new Date(startDateStr);
-      let endDate = new Date(startDate.getTime());
-      endDate.setMonth(endDate.getMonth() + durationValue);
-      const year = endDate.getFullYear();
-      const month = ("0" + (endDate.getMonth() + 1)).slice(-2);
-      const day = ("0" + endDate.getDate()).slice(-2);
-      document.getElementById("berakhirKapan").value = `${year}-${month}-${day}`;
     }
 
     function checkCustomers() {
@@ -355,12 +342,22 @@
       // Query Firestore for customer with the scanned barcode
       db.collection("customers").where("barcode", "==", code).get()
       .then(querySnapshot => {
+        const customerInfo = document.getElementById("customer-info");
         if (querySnapshot.empty) {
-          alert("No customer found with barcode: " + code);
+          customerInfo.innerHTML = "<p>No customer found with barcode: " + code + "</p>";
         } else {
           querySnapshot.forEach(doc => {
             const customer = doc.data();
-            alert("Customer Found:\nName: " + customer.nama + "\nEmail: " + customer.customerEmail);
+            customerInfo.innerHTML = `
+              <h3>Customer Found:</h3>
+              <p><strong>Name:</strong> ${customer.nama}</p>
+              <p><strong>Email:</strong> ${customer.customerEmail}</p>
+              <p><strong>Address:</strong> ${customer.alamat}</p>
+              <p><strong>Start Date:</strong> ${customer.mulaiKapan}</p>
+              <p><strong>Duration:</strong> ${customer.durasi} Months</p>
+              <p><strong>End Date:</strong> ${customer.berakhirKapan}</p>
+              <p><strong>Notes:</strong> ${customer.catatan}</p>
+            `;
           });
         }
       })
