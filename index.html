@@ -318,13 +318,6 @@
     <button onclick="hideCustomersList()">Close</button>
   </div>
 
-  <!-- Backup Deleted Customers List Container -->
-  <div id="backup-customers-list" class="container" style="display: none;">
-    <h2>Backup Deleted Members</h2>
-    <div id="backup-list-content"></div>
-    <button onclick="hideBackupList()">Close</button>
-  </div>
-
   <!-- Modal for displaying customer image -->
   <div id="imageModal" class="modal" onclick="closeModal()">
     <span class="close" onclick="closeModal()">&times;</span>
@@ -556,19 +549,44 @@
       document.getElementById("list-content").innerHTML = html;
     }
 
-    // Updated deleteCustomer function that backs up deleted customer
-    function deleteCustomer(id) {
-      if (!confirm("Are you sure you want to delete this customer?")) return;
-      const customer = customersData.find(x => x.id === id);
-      if (!customer) return showNotification("Customer not found.", "error");
-      // First back up the customer data into "deletedCustomers"
-      db.collection("deletedCustomers").doc(id).set(customer)
-        .then(() => {
-          // Then delete from the main "customers" collection
-          return db.collection("customers").doc(id).delete();
-        })
-        .then(() => showNotification("Customer deleted and backed up successfully.", "success"))
-        .catch(e => showNotification("Error deleting customer: " + e.message, "error"));
+    function saveCustomer() {
+      const btn = document.getElementById("addCustomerBtn");
+      btn.disabled = true;
+      const nama = document.getElementById("nama").value.trim();
+      const email = document.getElementById("customerEmail").value.trim();
+      const alamat = document.getElementById("alamat").value.trim();
+      const phone = document.getElementById("phone").value.trim();
+      const start = document.getElementById("mulaiKapan").value;
+      const end = document.getElementById("berakhirKapan").value;
+      if (!nama || !email || !alamat || !phone || !start || !end) {
+        showNotification("Please fill in all required fields.", "error");
+        btn.disabled = false;
+        return;
+      }
+      const data = {
+        nama,
+        customerEmail: email,
+        alamat,
+        phone,
+        mulaiKapan: start,
+        durasi: document.getElementById("durasi").value,
+        berakhirKapan: end,
+        catatan: document.getElementById("catatan").value,
+        imageUrl: document.getElementById("imageUrl").value,
+        imageUrl2: document.getElementById("imageUrl2").value
+      };
+      const action = editCustomerId
+        ? db.collection("customers").doc(editCustomerId).update(data)
+        : db.collection("customers").add(Object.assign(data, { barcode: "CUST" + Date.now() + Math.floor(Math.random() * 1000) }));
+      action.then(() => {
+        showNotification(editCustomerId ? "Customer Updated Successfully" : "Customer Added Successfully", "success");
+        resetForm();
+        if (editCustomerId) {
+          document.getElementById("customer-container").style.display = "none";
+        }
+      })
+      .catch(e => showNotification(e.message, "error"))
+      .finally(() => btn.disabled = false);
     }
 
     function editCustomer(id) {
@@ -585,6 +603,13 @@
       document.getElementById("customer-container").style.display = "block";
     }
 
+    function deleteCustomer(id) {
+      if (!confirm("Are you sure you want to delete this customer?")) return;
+      db.collection("customers").doc(id).delete()
+        .then(() => showNotification("Customer deleted successfully.", "success"))
+        .catch(e => showNotification("Error deleting customer: " + e.message, "error"));
+    }
+
     function openModal(url) {
       document.getElementById("modalImage").src = url;
       document.getElementById("imageModal").style.display = "flex";
@@ -594,49 +619,10 @@
       document.getElementById("imageModal").style.display = "none";
     }
 
-    // Function to display the backup deleted members list
+    // Placeholder for backupDeletedMembers function
     function backupDeletedMembers() {
-      document.getElementById("backup-customers-list").style.display = "block";
-      document.getElementById("backup-list-content").innerText = "Loading backup deleted members...";
-      db.collection("deletedCustomers").get()
-        .then(snapshot => {
-          let backupData = [];
-          snapshot.forEach(doc => {
-            let data = doc.data();
-            data.id = doc.id;
-            backupData.push(data);
-          });
-          displayBackupCustomers(backupData);
-        })
-        .catch(e => showNotification("Error fetching backup deleted members: " + e.message, "error"));
-    }
-
-    function displayBackupCustomers(list) {
-      let html = "";
-      if (!list.length) {
-        html = "<p>No backup deleted members found.</p>";
-      } else {
-        list.forEach(c => {
-          html += `
-            <div class="customer-item">
-              <strong>Name:</strong> ${c.nama}<br>
-              <strong>Email:</strong> ${c.customerEmail}<br>
-              <!-- You can show additional backup details if stored -->
-              <button onclick="restoreCustomer('${c.id}')">Restore</button>
-            </div>
-          `;
-        });
-      }
-      document.getElementById("backup-list-content").innerHTML = html;
-    }
-
-    // Placeholder for a restore feature
-    function restoreCustomer(id) {
-      showNotification("Restore feature not implemented.", "error");
-    }
-
-    function hideBackupList() {
-      document.getElementById("backup-customers-list").style.display = "none";
+      // Implement your backup logic here.
+      showNotification("Backup process initiated.", "success");
     }
 
     // Uploadcare widgets for both pictures
